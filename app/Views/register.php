@@ -280,119 +280,160 @@
     @media (max-width: 480px) {
       .register-card { padding: 1.8rem 1.4rem; }
     }
+
+    .form-control.is-invalid {
+    border-color: #dc3545 !important;
+    background-image: none !important;
+}
+
+.form-control.is-invalid:focus {
+    box-shadow: 0 0 0 3.5px rgba(220, 53, 69, 0.15) !important;
+}
+
+.text-danger {
+    color: #dc3545 !important;
+    font-weight: 500;
+}
+
+/* Subtle border for gender group if it fails */
+.gender-group.border-danger {
+    border-style: dashed !important;
+}
   </style>
 </head>
 <body>
 
 <div class="register-card">
-  <h2>Create Account</h2>
-  <p class="subtitle">Join us — it only takes a moment.</p>
-
-  <form action="#" method="POST" enctype="multipart/form-data" novalidate>
-
-    <!-- Profile Picture -->
-    <div class="mb-3">
-      <label class="form-label">Profile Picture</label>
-      <div class="avatar-upload">
-        <div class="avatar-preview" id="avatarPreviewWrap">
-          <i class="bi bi-person-fill placeholder-icon" id="avatarIcon"></i>
-          <img id="avatarPreview" alt="Preview"/>
+    <?php if (session()->getFlashdata('error')): ?>
+        <div class="alert alert-danger py-2" style="border-radius: 12px; font-size: 0.85rem;">
+            <i class="bi bi-exclamation-triangle-fill me-2"></i>
+            <?= session()->getFlashdata('error') ?>
         </div>
-        <label class="avatar-btn" for="profilePicInput">
-          <i class="bi bi-upload"></i> Upload Photo
-        </label>
-        <input type="file" id="profilePicInput" name="profile_pic" accept="image/*"/>
-      </div>
-    </div>
+    <?php endif; ?>
 
-    <hr class="field-divider"/>
+    <h2>Create Account</h2>
+    <p class="subtitle">Join us — it only takes a moment.</p>
 
-    <!-- Username + Email -->
-    <div class="row g-3 mb-3">
-      <div class="col-sm-6">
-        <label class="form-label" for="username">Username</label>
-        <input type="text" id="username" name="username" class="form-control"
-               placeholder="john_doe" required/>
-      </div>
-      <div class="col-sm-6">
-        <label class="form-label" for="email">Email</label>
-        <input type="email" id="email" name="email" class="form-control"
-               placeholder="john@example.com" required/>
-      </div>
-    </div>
+    <form action="<?= base_url('register/store') ?>" method="POST" enctype="multipart/form-data" novalidate>
+        <?= csrf_field() ?>
 
-    <!-- Phone -->
-    <div class="mb-3">
-      <label class="form-label" for="phone">Phone Number</label>
-      <div class="input-group">
-        <span class="input-group-text" style="background:var(--light);border-color:var(--border);border-radius:10px 0 0 10px;color:var(--muted);">
-          <i class="bi bi-telephone-fill"></i>
-        </span>
-        <input type="tel" id="phone" name="phone" class="form-control"
-               style="border-radius:0 10px 10px 0;"
-               placeholder="+91 98765 43210" required/>
-      </div>
-    </div>
+        <div class="mb-3">
+            <label class="form-label">Profile Picture</label>
+            <div class="avatar-upload">
+                <div class="avatar-preview" id="avatarPreviewWrap">
+                    <i class="bi bi-person-fill placeholder-icon" id="avatarIcon"></i>
+                    <img id="avatarPreview" alt="Preview"/>
+                </div>
+                <label class="avatar-btn" for="profilePicInput">
+                    <i class="bi bi-upload"></i> Upload Photo
+                </label>
+                <input type="file" id="profilePicInput" name="profile_pic" accept="image/*"/>
+            </div>
+            <?php if (session('errors.profile_pic')): ?>
+                <div class="text-danger mt-1" style="font-size: 0.78rem;"><?= session('errors.profile_pic') ?></div>
+            <?php endif; ?>
+        </div>
 
-    <!-- Password -->
-    <div class="mb-1">
-      <label class="form-label" for="password">Password</label>
-      <div class="pw-wrapper">
-        <input type="password" id="password" name="password" class="form-control"
-               placeholder="Create a strong password" required/>
-        <button type="button" class="pw-toggle" id="togglePw" aria-label="Show password">
-          <i class="bi bi-eye-fill" id="pwIcon"></i>
+        <hr class="field-divider"/>
+
+        <div class="row g-3 mb-3">
+            <div class="col-sm-6">
+                <label class="form-label" for="username">Username</label>
+                <input type="text" id="username" name="username" 
+                       class="form-control <?= session('errors.username') ? 'is-invalid' : '' ?>"
+                       value="<?= old('username') ?>" placeholder="john_doe">
+                <?php if (session('errors.username')): ?>
+                    <div class="text-danger mt-1" style="font-size: 0.78rem;"><?= session('errors.username') ?></div>
+                <?php endif; ?>
+            </div>
+            <div class="col-sm-6">
+                <label class="form-label" for="email">Email</label>
+                <input type="email" id="email" name="email" 
+                       class="form-control <?= session('errors.email') ? 'is-invalid' : '' ?>"
+                       value="<?= old('email') ?>" placeholder="john@example.com">
+                <?php if (session('errors.email')): ?>
+                    <div class="text-danger mt-1" style="font-size: 0.78rem;"><?= session('errors.email') ?></div>
+                <?php endif; ?>
+            </div>
+        </div>
+
+        <div class="mb-3">
+            <label class="form-label" for="phone">Phone Number</label>
+            <div class="input-group">
+                <span class="input-group-text" style="background:var(--light);border-color:var(--border);border-radius:10px 0 0 10px;color:var(--muted);">
+                    <i class="bi bi-telephone-fill"></i>
+                </span>
+                <input type="tel" id="phone" name="phone" 
+                       class="form-control <?= session('errors.phone_number') ? 'is-invalid' : '' ?>"
+                       style="border-radius:0 10px 10px 0;"
+                       value="<?= old('phone') ?>" placeholder="+91 98765 43210"
+                       oninput="this.value = this.value.replace(/[^0-9]/g, '')";>
+            </div>
+            <?php if (session('errors.phone_number')): ?>
+                <div class="text-danger mt-1" style="font-size: 0.78rem;"><?= session('errors.phone_number') ?></div>
+            <?php endif; ?>
+        </div>
+
+        <div class="mb-1">
+            <label class="form-label" for="password">Password</label>
+            <div class="pw-wrapper">
+                <input type="password" id="password" name="password" 
+                       class="form-control <?= session('errors.password') ? 'is-invalid' : '' ?>"
+                       placeholder="Create a strong password">
+                <button type="button" class="pw-toggle" id="togglePw">
+                    <i class="bi bi-eye-fill" id="pwIcon"></i>
+                </button>
+            </div>
+            <?php if (session('errors.password')): ?>
+                <div class="text-danger mt-1" style="font-size: 0.78rem;"><?= session('errors.password') ?></div>
+            <?php endif; ?>
+            
+            <div class="strength-wrap" id="strengthWrap">
+                <div class="strength-bar"><div class="strength-fill" id="strengthFill"></div></div>
+                <p class="strength-text" id="strengthText"></p>
+            </div>
+        </div>
+
+        <div class="mb-3 mt-3">
+            <label class="form-label" for="confirmPassword">Confirm Password</label>
+            <div class="pw-wrapper">
+                <input type="password" id="confirmPassword" name="confirm_password" class="form-control"
+                       placeholder="Repeat your password">
+                <button type="button" class="pw-toggle" id="toggleCpw">
+                    <i class="bi bi-eye-fill" id="cpwIcon"></i>
+                </button>
+            </div>
+            <div id="matchMsg" style="font-size:.78rem;margin-top:.3rem;"></div>
+        </div>
+
+        <div class="mb-4">
+            <label class="form-label d-block">Gender</label>
+            <div class="gender-group <?= session('errors.gender') ? 'border border-danger p-2 rounded' : '' ?>">
+                <div class="gender-option">
+                    <input type="radio" name="gender" id="genderMale" value="male" <?= old('gender') == 'male' ? 'checked' : '' ?>/>
+                    <label for="genderMale"><i class="bi bi-gender-male"></i> Male</label>
+                </div>
+                <div class="gender-option">
+                    <input type="radio" name="gender" id="genderFemale" value="female" <?= old('gender') == 'female' ? 'checked' : '' ?>/>
+                    <label for="genderFemale"><i class="bi bi-gender-female"></i> Female</label>
+                </div>
+                <div class="gender-option">
+                    <input type="radio" name="gender" id="genderOther" value="other" <?= old('gender') == 'other' ? 'checked' : '' ?>/>
+                    <label for="genderOther"><i class="bi bi-gender-ambiguous"></i> Other</label>
+                </div>
+            </div>
+            <?php if (session('errors.gender')): ?>
+                <div class="text-danger mt-1" style="font-size: 0.78rem;"><?= session('errors.gender') ?></div>
+            <?php endif; ?>
+        </div>
+
+        <button type="submit" class="btn-register">
+            <i class="bi bi-person-check-fill me-2"></i>Create My Account
         </button>
-      </div>
-      <!-- Strength indicator -->
-      <div class="strength-wrap" id="strengthWrap">
-        <div class="strength-bar"><div class="strength-fill" id="strengthFill"></div></div>
-        <p class="strength-text" id="strengthText"></p>
-      </div>
-    </div>
+    </form>
 
-    <!-- Confirm Password -->
-    <div class="mb-3 mt-3">
-      <label class="form-label" for="confirmPassword">Confirm Password</label>
-      <div class="pw-wrapper">
-        <input type="password" id="confirmPassword" name="confirm_password" class="form-control"
-               placeholder="Repeat your password" required/>
-        <button type="button" class="pw-toggle" id="toggleCpw" aria-label="Show confirm password">
-          <i class="bi bi-eye-fill" id="cpwIcon"></i>
-        </button>
-      </div>
-      <div id="matchMsg" style="font-size:.78rem;margin-top:.3rem;"></div>
-    </div>
-
-    <!-- Gender -->
-    <div class="mb-4">
-      <label class="form-label d-block">Gender</label>
-      <div class="gender-group">
-        <div class="gender-option">
-          <input type="radio" name="gender" id="genderMale" value="male" required/>
-          <label for="genderMale"><i class="bi bi-gender-male"></i> Male</label>
-        </div>
-        <div class="gender-option">
-          <input type="radio" name="gender" id="genderFemale" value="female"/>
-          <label for="genderFemale"><i class="bi bi-gender-female"></i> Female</label>
-        </div>
-        <div class="gender-option">
-          <input type="radio" name="gender" id="genderOther" value="other"/>
-          <label for="genderOther"><i class="bi bi-gender-ambiguous"></i> Other</label>
-        </div>
-      </div>
-    </div>
-
-    <!-- Submit -->
-    <button type="submit" class="btn-register">
-      <i class="bi bi-person-check-fill me-2"></i>Create My Account
-    </button>
-
-  </form>
-
-  <p class="login-link">Already have an account? <a href="#">Sign in</a></p>
+    <p class="login-link">Already have an account? <a href="<?= base_url('login') ?>">Sign in</a></p>
 </div>
-
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
 <script>
   // ── Show/hide password ──────────────────────────────────────────

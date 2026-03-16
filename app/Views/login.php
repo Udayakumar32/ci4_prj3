@@ -275,55 +275,103 @@
       font-weight: 700;
       text-decoration: none;
     }
+    /* Inline Error Styling */
+.form-control.is-invalid {
+    border-color: #dc3545 !important;
+    background-image: none !important;
+}
+
+.form-control.is-invalid:focus {
+    box-shadow: 0 0 0 3.5px rgba(220, 53, 69, 0.15) !important;
+}
+
+.text-danger {
+    color: #dc3545 !important;
+    font-weight: 500;
+    display: flex;
+    align-items: center;
+    gap: 4px;
+}
+
+.text-danger::before {
+    content: "•";
+    font-size: 1.2rem;
+}
     .register-link a:hover { text-decoration: underline; }
 
     @media (max-width: 480px) {
       .login-card { padding: 2rem 1.5rem; }
       .welcome-block h2 { font-size: 1.7rem; }
     }
+
+
   </style>
 </head>
 <body>
 
 <div class="login-card">
-  <!-- Heading -->
-  <div class="welcome-block">
-    <h2>Welcome back </h2>
-    <p>Sign in to continue to your account.</p>
-  </div>
+    <?php if (session()->getFlashdata('error')): ?>
+        <div class="alert alert-danger py-2" style="border-radius: 12px; font-size: 0.85rem;">
+            <i class="bi bi-exclamation-triangle-fill me-2"></i>
+            <?= session()->getFlashdata('error') ?>
+        </div>
+    <?php endif; ?>
 
-  <form action="#" method="POST" novalidate>
+    <?php if (session()->getFlashdata('success')): ?>
+        <div class="alert alert-success py-2" style="border-radius: 12px; font-size: 0.85rem;">
+            <i class="bi bi-check-circle-fill me-2"></i>
+            <?= session()->getFlashdata('success') ?>
+        </div>
+    <?php endif; ?>
 
-    <!-- Email -->
-    <div class="mb-3">
-      <label class="form-label" for="email">Email Address</label>
-      <div class="input-icon-wrap">
-        <i class="bi bi-envelope-fill input-icon"></i>
-        <input type="email" id="email" name="email" class="form-control"
-               placeholder="john@example.com" required/>
-      </div>
+    <div class="welcome-block">
+        <h2>Welcome back</h2>
+        <p>Sign in to continue to your account.</p>
     </div>
 
-    <!-- Password -->
-    <div class="mb-3">
-      <label class="form-label" for="password">Password</label>
-      <div class="pw-wrapper input-icon-wrap">
-        <i class="bi bi-lock-fill input-icon"></i>
-        <input type="password" id="password" name="password" class="form-control"
-               placeholder="Enter your password" required/>
-        <button type="button" class="pw-toggle" id="togglePw" aria-label="Toggle password">
-          <i class="bi bi-eye-fill" id="pwIcon"></i>
+    <form action="<?= base_url('login/auth') ?>" method="POST" novalidate>
+        <?= csrf_field() ?>
+
+        <div class="mb-3">
+            <label class="form-label" for="email">Email Address</label>
+            <div class="input-icon-wrap">
+                <i class="bi bi-envelope-fill input-icon"></i>
+                <input type="email" id="email" name="email" 
+                       class="form-control <?= session('errors.email') ? 'is-invalid' : '' ?>"
+                       value="<?= old('email') ?>" placeholder="john@example.com">
+            </div>
+            <?php if (session('errors.email')): ?>
+                <div class="text-danger mt-1" style="font-size: 0.78rem;"><?= session('errors.email') ?></div>
+            <?php endif; ?>
+        </div>
+
+        <div class="mb-4">
+            <label class="form-label" for="password">Password</label>
+            <div class="pw-wrapper input-icon-wrap">
+                <i class="bi bi-lock-fill input-icon"></i>
+                <input type="password" id="password" name="password" 
+                       class="form-control <?= session('errors.password') ? 'is-invalid' : '' ?>"
+                       placeholder="Enter your password">
+                <button type="button" class="pw-toggle" id="togglePw" aria-label="Toggle password">
+                    <i class="bi bi-eye-fill" id="pwIcon"></i>
+                </button>
+            </div>
+            <?php if (session('errors.password')): ?>
+                <div class="text-danger mt-1" style="font-size: 0.78rem;"><?= session('errors.password') ?></div>
+            <?php endif; ?>
+        </div>
+
+        <button type="submit" class="btn-login">
+            <i class="bi bi-box-arrow-in-right"></i> Sign In
         </button>
-      </div>
-    </div>
-    <!-- Submit -->
-    <button type="submit" class="btn-login">
-      <i class="bi bi-box-arrow-in-right"></i> Sign In
-    </button>
+    </form>
 
-  </form>
-
+    <p class="register-link">
+        Don't have an account? <a href="<?= base_url('register') ?>">Sign up</a>
+    </p>
+</div>
  
+
 
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
 <script>
