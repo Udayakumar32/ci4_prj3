@@ -34,12 +34,10 @@ class Filters extends BaseFilters
         'forcehttps'    => ForceHTTPS::class,
         'pagecache'     => PageCache::class,
         'performance'   => PerformanceMetrics::class,
-<<<<<<< HEAD
-        'csrf'    => \CodeIgniter\Filters\CSRF::class,
-        'auth'    => \App\Filters\AuthGuard::class,
-=======
-         'authfilter' => \App\Filters\AuthFilter::class,
->>>>>>> 29eee12bec008c94d52abe33b8833c7de7ff61a2
+        'authfilter' => \App\Filters\AuthFilter::class,
+        'guestfilter' => \App\Filters\GuestFilter::class, 
+        'isLoggedIn' => \App\Filters\AuthFilter::class,
+        'isGuest'    => \App\Filters\GuestFilter::class,
     ];
 
     /**
@@ -112,5 +110,11 @@ class Filters extends BaseFilters
      *
      * @var array<string, array<string, list<string>>>
      */
-    public array $filters = [];
+    public array $filters = [
+    // Apply 'isLoggedIn' to dashboard and all sub-pages
+    'isLoggedIn' => ['before' => ['dashboard', 'dashboard/*']],
+    
+    // Apply 'isGuest' to login and register pages
+    'isGuest'    => ['before' => ['login', 'register', '/']]
+    ];
 }

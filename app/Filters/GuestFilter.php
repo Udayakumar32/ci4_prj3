@@ -6,7 +6,7 @@ use CodeIgniter\Filters\FilterInterface;
 use CodeIgniter\HTTP\RequestInterface;
 use CodeIgniter\HTTP\ResponseInterface;
 
-class AuthFilter implements FilterInterface
+class GuestFilter implements FilterInterface
 {
     /**
      * Do whatever processing this filter needs to do.
@@ -25,8 +25,8 @@ class AuthFilter implements FilterInterface
      */
     public function before(RequestInterface $request, $arguments = null)
     {
-         if (!session()->get('logged_in')) {
-            return redirect()->to(base_url('login'))->with('error', 'Please login first.');
+        if (session()->get('logged_in')) {
+            return redirect()->to(base_url('dashboard'));
         }
     }
 
@@ -44,8 +44,5 @@ class AuthFilter implements FilterInterface
      */
     public function after(RequestInterface $request, ResponseInterface $response, $arguments = null)
     {
-        $response->setHeader('Cache-Control', 'no-store, max-age=0, no-cache');
-        $response->setHeader('Pragma', 'no-cache');
-        return $response;
     }
 }
