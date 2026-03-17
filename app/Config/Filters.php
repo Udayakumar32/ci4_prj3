@@ -34,8 +34,12 @@ class Filters extends BaseFilters
         'forcehttps'    => ForceHTTPS::class,
         'pagecache'     => PageCache::class,
         'performance'   => PerformanceMetrics::class,
+<<<<<<< HEAD
         'csrf'    => \CodeIgniter\Filters\CSRF::class,
         'auth'    => \App\Filters\AuthGuard::class,
+=======
+         'authfilter' => \App\Filters\AuthFilter::class,
+>>>>>>> 29eee12bec008c94d52abe33b8833c7de7ff61a2
     ];
 
     /**
