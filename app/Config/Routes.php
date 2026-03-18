@@ -27,3 +27,10 @@ $routes->group('', ['filter' => 'authfilter'], function ($routes) {
     $routes->get('dashboard', 'DashboardController::index');
     // add more protected routes here...
 });
+$routes->post('users/update/(:num)',   'DashboardController::update/$1');
+ 
+// Admin-only: delete a user
+$routes->post('users/delete/(:num)',   'DashboardController::delete/$1');
+ 
+// Optional: server-side CSV export (admin only)
+$routes->get('users/export/csv',       'DashboardController::exportCSV');
