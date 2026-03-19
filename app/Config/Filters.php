@@ -86,6 +86,12 @@ class Filters extends BaseFilters
         ],
     ];
 
+    public array $except = [
+    'dashboard/datatable',
+    'users/delete/*',
+    'users/update/*',
+];
+
     /**
      * List of filter aliases that works on a
      * particular HTTP method (GET, POST, etc.).

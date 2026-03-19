@@ -27,6 +27,7 @@ $routes->group('', ['filter' => 'authfilter'], function ($routes) {
     $routes->get('dashboard', 'DashboardController::index');
     // add more protected routes here...
 });
+$routes->post('dashboard/datatable', 'DashboardController::datatable');
 $routes->post('users/update/(:num)',   'DashboardController::update/$1');
  
 // Admin-only: delete a user

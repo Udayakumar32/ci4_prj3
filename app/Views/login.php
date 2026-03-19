@@ -105,8 +105,7 @@
 
     <!-- Register link -->
     <p class="register-prompt">
-      Don't have an account?
-      <a href="<?= base_url('register') ?>">Create one free</a>
+      <a href="<?= base_url('register') ?>">Don't have an account ? Create one free</a>
     </p>
 <?= $this->endSection() ?>
   </div>
