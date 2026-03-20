@@ -186,6 +186,26 @@
         .btn-edit-u   { background: var(--accent); color: #fff; }
         .btn-delete-u { background: var(--danger);  color: #fff; }
 
+        /* ── PROFILE edit  ───────────────────────────── */
+
+        /* Edit Profile Button */
+.btn-edit-profile {
+    background: rgba(255,255,255,.2);
+    border: 1px solid rgba(255,255,255,.5);
+    color: #fff;
+    font-size: 12px;
+    padding: 5px 16px;
+    border-radius: 20px;
+    cursor: pointer;
+    transition: background .2s;
+    display: inline-flex;
+    align-items: center;
+    gap: 5px;
+}
+.btn-edit-profile:hover {
+    background: rgba(255,255,255,.35);
+    color: #fff;
+}
         /* ── PROFILE CARD ───────────────────────────── */
         .profile-wrap { max-width: 620px; }
         .profile-header {

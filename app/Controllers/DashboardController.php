@@ -106,10 +106,10 @@ class DashboardController extends BaseController
         if (!empty($search)) {
             $builder = $builder
                 ->groupStart()
-                    ->like('username',       $search)
-                    ->orLike('gender',       $search)
-                    ->orLike('phone_number', $search)
-                    ->orLike('user_type',    $search)
+                ->like('username',       $search)
+                ->orLike('gender',       $search)
+                ->orLike('phone_number', $search)
+                ->orLike('user_type',    $search)
                 ->groupEnd();
         }
 
@@ -193,50 +193,212 @@ class DashboardController extends BaseController
     {
         $this->authGuard();
 
+        // 1. Admin check
         if (session()->get('user_type') !== 'admin') {
-            return redirect()->to(base_url('dashboard'))->with('error', 'Unauthorized action.');
+            return redirect()->to(base_url('dashboard'))
+                ->with('error', 'Unauthorized action.');
         }
 
-        $model = new UserModel();
+        // 2. ID check
+        if (!$id) {
+            return redirect()->to(base_url('dashboard'))
+                ->with('error', 'User ID is missing.');
+        }
 
+        // 3. Prevent editing other admins
+        $model      = new UserModel();
+        $targetUser = $model->find((int)$id);
+
+        if (!$targetUser) {
+            return redirect()->to(base_url('dashboard'))
+                ->with('error', 'User not found.');
+        }
+
+        if ($targetUser['user_type'] === 'admin') {
+            return redirect()->to(base_url('dashboard'))
+                ->with('error', 'You cannot edit another admin account.');
+        }
+
+        // 4. Validate inputs
+        $username = trim($this->request->getPost('username'));
+        $phone    = trim($this->request->getPost('phone_number'));
+        $gender   = $this->request->getPost('gender');
+
+        if (empty($username)) {
+            return redirect()->to(base_url('dashboard'))
+                ->with('error', 'Username cannot be empty.');
+        }
+
+        if (strlen($username) < 3) {
+            return redirect()->to(base_url('dashboard'))
+                ->with('error', 'Username must be at least 3 characters.');
+        }
+
+        // 5. Build update data
         $updateData = [
-            'username'     => $this->request->getPost('username'),
-            'phone_number' => $this->request->getPost('phone_number'),
-            'gender'       => $this->request->getPost('gender'),
+            'username'     => $username,
+            'phone_number' => $phone  ?: null,
+            'gender'       => $gender ?: null,
         ];
 
-        $model->update($id, $updateData);
-        return redirect()->to(base_url('dashboard'))->with('success', 'User updated successfully.');
+        // 6. Execute update
+        if ($model->update((int)$id, $updateData)) {
+            return redirect()->to(base_url('dashboard'))
+                ->with('success', 'User updated successfully.');
+        }
+
+        // Get exact validation error messages from model
+        $errors = $model->errors();
+
+        if (!empty($errors)) {
+            // Return first validation error message to user
+            $firstError = array_values($errors)[0];
+            return redirect()->to(base_url('dashboard'))
+                ->with('error', $firstError);
+        }
+
+        return redirect()->to(base_url('dashboard'))
+            ->with('error', 'Could not update user. Please try again.');
+    }
+public function updateProfile()
+{
+    $this->authGuard();
+
+    $userId = (int) session()->get('user_id');
+    $model  = new UserModel();
+
+    $username = trim($this->request->getPost('username'));
+    $phone    = trim($this->request->getPost('phone_number'));
+    $gender   = $this->request->getPost('gender');
+
+    // Validate username
+    if (empty($username)) {
+        return redirect()->to(base_url('dashboard'))
+                         ->with('error', 'A username is required.');
+    }
+    if (strlen($username) < 2) {
+        return redirect()->to(base_url('dashboard'))
+                         ->with('error', 'Your username must be at least 2 characters long.');
+    }
+    if (strlen($username) > 21) {
+        return redirect()->to(base_url('dashboard'))
+                         ->with('error', 'Your username cannot be longer than 21 characters.');
+    }
+    if (!ctype_alpha($username)) {
+        return redirect()->to(base_url('dashboard'))
+                         ->with('error', 'Your username can only contain letters.');
     }
 
+    // Validate phone if provided
+    if (!empty($phone)) {
+        if (!preg_match('/^[0-9\s\+\-\(\)]+$/', $phone)) {
+            return redirect()->to(base_url('dashboard'))
+                             ->with('error', 'Phone number contains invalid characters.');
+        }
+        if (strlen(preg_replace('/\D/', '', $phone)) < 10) {
+            return redirect()->to(base_url('dashboard'))
+                             ->with('error', 'Phone number must be at least 10 digits.');
+        }
+    }
+
+    $updateData = [
+        'username'     => $username,
+        'phone_number' => $phone  ?: null,
+        'gender'       => $gender ?: null,
+    ];
+
+    // Handle profile image upload
+    $image = $this->request->getFile('profile_image');
+    if ($image && $image->isValid() && !$image->hasMoved()) {
+
+        // Validate image type and size
+        $allowedTypes = ['image/jpeg', 'image/png', 'image/webp'];
+        if (!in_array($image->getMimeType(), $allowedTypes)) {
+            return redirect()->to(base_url('dashboard'))
+                             ->with('error', 'Only JPG, PNG or WEBP images are allowed.');
+        }
+        if ($image->getSize() > 2 * 1024 * 1024) {
+            return redirect()->to(base_url('dashboard'))
+                             ->with('error', 'Image must be under 2MB.');
+        }
+
+        // Create upload folder if it doesn't exist
+        $uploadPath = FCPATH . 'uploads/profiles/';
+        if (!is_dir($uploadPath)) {
+            mkdir($uploadPath, 0755, true);
+        }
+
+        // Delete old image if exists
+        $currentUser = $model->find($userId);
+        if (!empty($currentUser['profile_image'])) {
+            $oldFile = $uploadPath . $currentUser['profile_image'];
+            if (file_exists($oldFile)) unlink($oldFile);
+        }
+
+        // Save new image with unique name
+        $newName = 'profile_' . $userId . '_' . time() . '.' . $image->getExtension();
+        $image->move($uploadPath, $newName);
+        $updateData['profile_image'] = $newName;
+    }
+
+    $model->skipValidation(true);
+
+    if ($model->update($userId, $updateData)) {
+        // Refresh session with new values
+        session()->set([
+            'username'     => $username,
+            'phone_number' => $phone  ?: null,
+            'gender'       => $gender ?: null,
+        ]);
+
+        return redirect()->to(base_url('dashboard'))
+                         ->with('success', 'Profile updated successfully.');
+    }
+
+    return redirect()->to(base_url('dashboard'))
+                     ->with('error', 'Could not update profile. Please try again.');
+}
     public function delete($id = null)
     {
         $this->authGuard();
 
         if (session()->get('user_type') !== 'admin') {
             return redirect()->to(base_url('dashboard'))
-                             ->with('error', 'You do not have permission to delete users.');
+                ->with('error', 'You do not have permission to delete users.');
         }
 
         if (!$id) {
             return redirect()->to(base_url('dashboard'))
-                             ->with('error', 'User ID is missing.');
+                ->with('error', 'User ID is missing.');
         }
 
+        // Prevent deleting own account
         if ((int)$id === (int)session()->get('user_id')) {
             return redirect()->to(base_url('dashboard'))
-                             ->with('error', 'You cannot delete your own account.');
+                ->with('error', 'You cannot delete your own account.');
         }
 
-        $model = new UserModel();
+        // Prevent deleting other admins
+        $model      = new UserModel();
+        $targetUser = $model->find((int)$id);
+
+        if (!$targetUser) {
+            return redirect()->to(base_url('dashboard'))
+                ->with('error', 'User not found.');
+        }
+
+        if ($targetUser['user_type'] === 'admin') {
+            return redirect()->to(base_url('dashboard'))
+                ->with('error', 'You cannot delete another admin account.');
+        }
 
         if ($model->delete((int)$id)) {
             return redirect()->to(base_url('dashboard'))
-                             ->with('success', 'User deleted successfully.');
+                ->with('success', 'User deleted successfully.');
         }
 
         return redirect()->to(base_url('dashboard'))
-                         ->with('error', 'Could not delete user. Please try again.');
+            ->with('error', 'Could not delete user. Please try again.');
     }
 
     public function exportCSV()

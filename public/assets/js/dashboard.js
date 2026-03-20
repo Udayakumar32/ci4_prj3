@@ -226,6 +226,32 @@ $('#clearDates').on('click', function () {
     $('#editForm').attr('action', updateBaseUrl + '/' + b.data('id'));
 });
 
+  /* ──────────────────────────────────────────────
+   PROFILE IMAGE PREVIEW
+────────────────────────────────────────────── */
+$('#profileImageInput').on('change', function () {
+    const file = this.files[0];
+    if (!file) return;
+
+    // Validate size (2MB max)
+    if (file.size > 2 * 1024 * 1024) {
+        alert('Image is too large. Maximum size is 2MB.');
+        this.value = '';
+        return;
+    }
+
+    const reader = new FileReader();
+    reader.onload = function (e) {
+        // Replace preview with selected image
+        $('#profilePreview').replaceWith(
+            '<img id="profilePreview" src="' + e.target.result + '" ' +
+            'style="width:80px;height:80px;border-radius:50%;object-fit:cover;border:3px solid var(--accent);">'
+        );
+    };
+    reader.readAsDataURL(file);
+});
+
+
     /* ──────────────────────────────────────────────
        7.  DELETE MODAL — confirm + set action
     ────────────────────────────────────────────── */

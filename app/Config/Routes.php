@@ -35,3 +35,4 @@ $routes->post('users/delete/(:num)',   'DashboardController::delete/$1');
  
 // Optional: server-side CSV export (admin only)
 $routes->get('users/export/csv',       'DashboardController::exportCSV');
+$routes->post('profile/update', 'DashboardController::updateProfile');
