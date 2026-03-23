@@ -9,12 +9,12 @@ class UserSeeder extends Seeder
 {
     public function run()
     {
-        $faker = Factory::create();
+        $faker     = Factory::create();
         $encrypter = \Config\Services::encrypter();
 
-        // --- 1. Create an Admin User (So you can test admin features) ---
+        // --- 1. Admin User ---
         $adminData = [
-            'username'     => 'admin',
+            'username'     => 'Admin',
             'email'        => base64_encode($encrypter->encrypt('admin@example.com')),
             'password'     => password_hash('admin123', PASSWORD_BCRYPT),
             'phone_number' => '1234567890',
@@ -24,20 +24,27 @@ class UserSeeder extends Seeder
         ];
         $this->db->table('users')->insert($adminData);
 
-        // --- 2. Create Regular Users using Faker ---
+        // --- 2. Regular Users ---
         for ($i = 0; $i < 20; $i++) {
             $plainEmail = $faker->unique()->safeEmail;
-            
+
+            // Alpha only username (letters only, 2–21 chars)
+            $username = substr(preg_replace('/[^a-zA-Z]/', '', $faker->firstName . $faker->lastName), 0, 21);
+            if (strlen($username) < 2) {
+                $username = 'User' . $faker->randomLetter . $faker->randomLetter;
+            }
+
+            // Exactly 10 numeric digits
+            $phone = (string) $faker->numerify('##########'); // 10 # = 10 digits
+
             $userData = [
-                'username'     => $faker->userName,
-                // Email must be encrypted just like in your AuthController
+                'username'     => $username,
                 'email'        => base64_encode($encrypter->encrypt($plainEmail)),
                 'password'     => password_hash('user123', PASSWORD_BCRYPT),
-                'phone_number' => $faker->phoneNumber,
+                'phone_number' => $phone,
                 'gender'       => $faker->randomElement(['male', 'female', 'other']),
                 'user_type'    => 'user',
                 'created_at'   => date('Y-m-d H:i:s'),
-                'last_seen'    => $faker->dateTimeThisMonth()->format('Y-m-d H:i:s'),
             ];
 
             $this->db->table('users')->insert($userData);

@@ -36,3 +36,5 @@ $routes->post('users/delete/(:num)',   'DashboardController::delete/$1');
 // Optional: server-side CSV export (admin only)
 $routes->get('users/export/csv',       'DashboardController::exportCSV');
 $routes->post('profile/update', 'DashboardController::updateProfile');
+// This route will handle requests like: base_url('uploads/profiles/image.jpg')
+$routes->get('uploads/profiles/(:any)', 'DashboardController::get_profile_pic/$1');

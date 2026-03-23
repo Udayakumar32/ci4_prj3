@@ -54,19 +54,21 @@
 <main class="main-wrap">
 
     <!-- Flash messages (success / error from redirects) -->
-    <?php if (session()->getFlashdata('success')): ?>
-        <div class="flash-alert alert alert-success">
-            <i class="fas fa-check-circle"></i>
-            <?= esc(session()->getFlashdata('success')) ?>
-        </div>
-    <?php endif; ?>
+    <div id="toast-container" class="toast-container">
+        <?php if (session()->getFlashdata('success')): ?>
+            <div class="flash-alert alert-success">
+                <i class="fas fa-check-circle"></i>
+                <span><?= esc(session()->getFlashdata('success')) ?></span>
+            </div>
+        <?php endif; ?>
 
-    <?php if (session()->getFlashdata('error')): ?>
-        <div class="flash-alert alert alert-danger">
-            <i class="fas fa-exclamation-circle"></i>
-            <?= esc(session()->getFlashdata('error')) ?>
-        </div>
-    <?php endif; ?>
+        <?php if (session()->getFlashdata('error')): ?>
+            <div class="flash-alert alert-danger">
+                <i class="fas fa-exclamation-circle"></i>
+                <span><?= esc(session()->getFlashdata('error')) ?></span>
+            </div>
+        <?php endif; ?>
+    </div>
 
 
     <!-- ── DASHBOARD SECTION ────────────────────────── -->
@@ -117,107 +119,112 @@
                     </tr>
                 </thead>
                 <tbody>
+                    <!--Will fill using ajax -->
                 </tbody>
             </table>
         </div>
 
     </section><!-- /dashboard -->
 
-
     <!-- ── MY PROFILE SECTION ───────────────────────── -->
- <!-- ── MY PROFILE SECTION ───────────────────────── -->
-<section class="page-section" id="sec-profile">
+    <section class="page-section" id="sec-profile">
 
-    <h1 class="page-title">
-        <i class="fas fa-user-circle me-2"></i>My Profile
-    </h1>
+        <h1 class="page-title">
+            <i class="fas fa-user-circle me-2"></i>My Profile
+        </h1>
 
-    <?php $cu = $currentUser ?? []; ?>
+        <?php $cu = $currentUser ?? []; ?>
 
-    <div class="profile-wrap card">
-        <div class="profile-header">
+        <div class="profile-wrap card">
+            <div class="profile-header">
+                <div class="profile-avatar">
+                    <?php
+                    $imgName  = trim($cu['profile_pic'] ?? '');
+                    $fullPath = WRITEPATH . 'uploads/profiles/' . $imgName;  // ← was WRITEPATH, now FCPATH
+                    ?>
 
-            <!-- Profile Avatar — shows image if exists, else default icon -->
-            <div class="profile-avatar">
-                <?php if (!empty($cu['profile_image']) && file_exists(FCPATH . 'uploads/profiles/' . $cu['profile_image'])): ?>
-                    <img src="<?= base_url('uploads/profiles/' . esc($cu['profile_image'])) ?>"
-                         alt="Profile Photo"
-                         style="width:100%;height:100%;object-fit:cover;border-radius:50%;">
-                <?php else: ?>
-                    <i class="fas fa-user"></i>
-                <?php endif; ?>
-            </div>
+                    <?php if (!empty($imgName) && file_exists($fullPath)): ?>
+                        <img src="<?= base_url('uploads/profiles/' . esc($imgName)) ?>?v=<?= time() ?>"
+                            alt="Profile"
+                            style="width:100%; height:100%; object-fit:cover; border-radius:50%;">
+                    <?php else: ?>
+                        <div style="width:100%; height:100%; display:flex; align-items:center;
+                justify-content:center; background:#eaf4ff; border-radius:50%;">
+                            <i class="fas fa-user" style="font-size:2rem; color:#007bff;"></i>
+                        </div>
+                    <?php endif; ?>
+                </div>
 
-            <h4><?= esc($cu['username'] ?? session()->get('username') ?? 'User') ?></h4>
-            <span class="rp"><?= esc($cu['user_type'] ?? session()->get('user_type') ?? 'user') ?></span>
+                <h4><?= esc($cu['username'] ?? session()->get('username') ?? 'User') ?></h4>
+                <span class="rp"><?= esc($cu['user_type'] ?? session()->get('user_type') ?? 'user') ?></span>
 
-            <!-- Edit Profile Button -->
-            <button class="btn-edit-profile mt-3"
+                <!-- Edit Profile Button -->
+                <button class="btn-edit-profile mt-3"
                     data-bs-toggle="modal"
                     data-bs-target="#editProfileModal">
-                <i class="fas fa-user-edit me-1"></i> Edit Profile
-            </button>
+                    <i class="fas fa-user-edit me-1"></i> Edit Profile
+                </button>
 
-        </div>
-
-        <div class="profile-body">
-
-            <div class="pf-row">
-                <div class="pf-icon"><i class="fas fa-user"></i></div>
-                <div>
-                    <div class="pf-label">Username</div>
-                    <div class="pf-value"><?= esc($cu['username'] ?? 'N/A') ?></div>
-                </div>
             </div>
 
-            <div class="pf-row">
-                <div class="pf-icon"><i class="fas fa-envelope"></i></div>
-                <div>
-                    <div class="pf-label">Email Address</div>
-                    <div class="pf-value"><?= esc($cu['email'] ?? 'N/A') ?></div>
-                </div>
-            </div>
+            <div class="profile-body">
 
-            <div class="pf-row">
-                <div class="pf-icon"><i class="fas fa-phone"></i></div>
-                <div>
-                    <div class="pf-label">Phone Number</div>
-                    <div class="pf-value"><?= esc($cu['phone_number'] ?? 'N/A') ?></div>
-                </div>
-            </div>
-
-            <div class="pf-row">
-                <div class="pf-icon"><i class="fas fa-venus-mars"></i></div>
-                <div>
-                    <div class="pf-label">Gender</div>
-                    <div class="pf-value"><?= esc(ucfirst($cu['gender'] ?? 'N/A')) ?></div>
-                </div>
-            </div>
-
-            <div class="pf-row">
-                <div class="pf-icon"><i class="fas fa-shield-alt"></i></div>
-                <div>
-                    <div class="pf-label">Role</div>
-                    <div class="pf-value" style="text-transform:capitalize">
-                        <?= esc($cu['user_type'] ?? 'user') ?>
+                <div class="pf-row">
+                    <div class="pf-icon"><i class="fas fa-user"></i></div>
+                    <div>
+                        <div class="pf-label">Username</div>
+                        <div class="pf-value"><?= esc($cu['username'] ?? 'N/A') ?></div>
                     </div>
                 </div>
-            </div>
 
-            <div class="pf-row">
-                <div class="pf-icon"><i class="fas fa-calendar-alt"></i></div>
-                <div>
-                    <div class="pf-label">Member Since</div>
-                    <div class="pf-value">
-                        <?= isset($cu['created_at']) ? date('F d, Y', strtotime($cu['created_at'])) : 'N/A' ?>
+                <div class="pf-row">
+                    <div class="pf-icon"><i class="fas fa-envelope"></i></div>
+                    <div>
+                        <div class="pf-label">Email Address</div>
+                        <div class="pf-value"><?= esc($cu['email'] ?? 'N/A') ?></div>
                     </div>
                 </div>
+
+                <div class="pf-row">
+                    <div class="pf-icon"><i class="fas fa-phone"></i></div>
+                    <div>
+                        <div class="pf-label">Phone Number</div>
+                        <div class="pf-value"><?= esc($cu['phone_number'] ?? 'N/A') ?></div>
+                    </div>
+                </div>
+
+                <div class="pf-row">
+                    <div class="pf-icon"><i class="fas fa-venus-mars"></i></div>
+                    <div>
+                        <div class="pf-label">Gender</div>
+                        <div class="pf-value"><?= esc(ucfirst($cu['gender'] ?? 'N/A')) ?></div>
+                    </div>
+                </div>
+
+                <div class="pf-row">
+                    <div class="pf-icon"><i class="fas fa-shield-alt"></i></div>
+                    <div>
+                        <div class="pf-label">Role</div>
+                        <div class="pf-value" style="text-transform:capitalize">
+                            <?= esc($cu['user_type'] ?? 'user') ?>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="pf-row">
+                    <div class="pf-icon"><i class="fas fa-calendar-alt"></i></div>
+                    <div>
+                        <div class="pf-label">Member Since</div>
+                        <div class="pf-value">
+                            <?= isset($cu['created_at']) ? date('F d, Y', strtotime($cu['created_at'])) : 'N/A' ?>
+                        </div>
+                    </div>
+                </div>
+
             </div>
-
         </div>
-    </div>
 
-</section><!-- /profile -->
+    </section><!-- /profile -->
 </main>
 
 
@@ -297,7 +304,7 @@
 
             <div class="modal-footer border-0 justify-content-center gap-2 pb-4">
                 <button type="button" class="btn btn-secondary btn-sm"
-                        data-bs-dismiss="modal">Cancel</button>
+                    data-bs-dismiss="modal">Cancel</button>
 
                 <form id="deleteForm" method="post" action="">
                     <?= csrf_field() ?>
@@ -326,99 +333,93 @@
 
             <div class="modal-body p-4">
                 <form id="editProfileForm" method="post"
-                      action="<?= base_url('profile/update') ?>"
-                      enctype="multipart/form-data">
+                    action="<?= base_url('profile/update') ?>"
+                    enctype="multipart/form-data">
                     <?= csrf_field() ?>
 
-                    <!-- Profile Image Upload -->
-                    <div class="mb-3 text-center">
-                        <div class="profile-preview mb-2">
-                            <?php if (!empty($cu['profile_image']) && file_exists(FCPATH . 'uploads/profiles/' . $cu['profile_image'])): ?>
-                                <img id="profilePreview"
-                                     src="<?= base_url('uploads/profiles/' . esc($cu['profile_image'])) ?>"
-                                     style="width:80px;height:80px;border-radius:50%;object-fit:cover;border:3px solid var(--accent);">
-                            <?php else: ?>
-                                <div id="profilePreview"
-                                     style="width:80px;height:80px;border-radius:50%;background:#eaf4ff;
-                                            display:inline-flex;align-items:center;justify-content:center;
-                                            border:3px solid var(--accent);font-size:2rem;color:var(--accent);">
-                                    <i class="fas fa-user"></i>
-                                </div>
-                            <?php endif; ?>
-                        </div>
-                        <label class="form-label d-block" style="font-size:12px;">
-                            Profile Photo
-                            <span style="color:var(--muted);font-size:11px;">(optional)</span>
-                        </label>
-                        <input type="file" class="form-control form-control-sm"
-                               name="profile_image" id="profileImageInput"
-                               accept="image/jpeg,image/png,image/webp"
-                               style="font-size:12px;">
-                        <small style="color:var(--muted);font-size:11px;">
-                            JPG, PNG or WEBP. Max 2MB.
-                        </small>
-                    </div>
+                   <!-- Profile Image Upload -->
+<div class="mb-3 text-center">
+    <div class="profile-preview mb-2">
+        <?php $pic = trim($cu['profile_pic'] ?? ''); ?>
 
-                    <hr style="border-color:#f0f0f0;">
-
-                    <!-- Username -->
-                    <div class="mb-3">
-                        <label class="form-label">
-                            Username <span class="text-danger">*</span>
-                        </label>
-                        <input type="text" class="form-control"
-                               name="username" id="epUsername"
-                               value="<?= esc($cu['username'] ?? '') ?>"
-                               required minlength="2" maxlength="21">
-                    </div>
-
-                    <div class="row g-3 mb-3">
-                        <!-- Phone -->
-                        <div class="col-6">
-                            <label class="form-label">Phone</label>
-                            <input type="text" class="form-control"
-                                   name="phone_number" id="epPhone"
-                                   value="<?= esc($cu['phone_number'] ?? '') ?>"
-                                   maxlength="20">
-                        </div>
-                        <!-- Gender -->
-                        <div class="col-6">
-                            <label class="form-label">Gender</label>
-                            <select class="form-select" name="gender" id="epGender">
-                                <option value="">-- Select --</option>
-                                <option value="male"   <?= ($cu['gender'] ?? '') === 'male'   ? 'selected' : '' ?>>Male</option>
-                                <option value="female" <?= ($cu['gender'] ?? '') === 'female' ? 'selected' : '' ?>>Female</option>
-                                <option value="other"  <?= ($cu['gender'] ?? '') === 'other'  ? 'selected' : '' ?>>Other</option>
-                            </select>
-                        </div>
-                    </div>
-
-                    <div class="d-flex justify-content-end gap-2">
-                        <button type="button" class="btn btn-secondary btn-sm"
-                                data-bs-dismiss="modal">Cancel</button>
-                        <button type="submit" class="btn-save-edit">
-                            <i class="fas fa-save me-1"></i>Save Changes
-                        </button>
-                    </div>
-
-                </form>
+        <?php if (!empty($pic) && file_exists(WRITEPATH . 'uploads/profiles/' . $pic)): ?>
+            <img id="profilePreview"
+                 src="<?= base_url('uploads/profiles/' . esc($pic)) ?>"
+                 style="width:80px;height:80px;border-radius:50%;object-fit:cover;border:3px solid var(--accent);">
+        <?php else: ?>
+            <div id="profilePreview"
+                 style="width:80px;height:80px;border-radius:50%;background:#eaf4ff;
+                        display:inline-flex;align-items:center;justify-content:center;
+                        border:3px solid var(--accent);font-size:2rem;color:var(--accent);">
+                <i class="fas fa-user"></i>
             </div>
+        <?php endif; ?>
+    </div>
+    <label class="form-label d-block" style="font-size:12px;">
+        Profile Photo
+        <span style="color:var(--muted);font-size:11px;">(optional)</span>
+    </label>
+    <input type="file" class="form-control form-control-sm"
+           name="profile_pic" id="profileImageInput"
+           accept="image/jpeg,image/png,image/webp"
+           style="font-size:12px;">
+    <small style="color:var(--muted);font-size:11px;">JPG, PNG or WEBP. Max 2MB.</small>
+</div>
 
-        </div>
+<hr style="border-color:#f0f0f0;">
+
+<!-- Username -->
+<div class="mb-3">
+    <label class="form-label">Username <span class="text-danger">*</span></label>
+    <input type="text" class="form-control"
+           name="username" id="epUsername"
+           value="<?= esc($cu['username'] ?? '') ?>"
+           minlength="2" maxlength="21">
+</div>
+
+<div class="row g-3 mb-3">
+    <!-- Phone — NO required, NO pattern, NO browser validation -->
+    <div class="col-6">
+        <label class="form-label">Phone</label>
+        <input type="text" class="form-control"
+               name="phone_number" id="epPhone"
+               value="<?= esc($cu['phone_number'] ?? '') ?>"
+               inputmode="numeric"
+               maxlength="10"
+               oninput="this.value = this.value.replace(/[^0-9]/g, '').substring(0, 12);">
+    </div>
+    <!-- Gender — NO required -->
+    <div class="col-6">
+        <label class="form-label">Gender</label>
+        <select class="form-select" name="gender" id="epGender">
+            <option value="">-- Select --</option>
+            <option value="male"   <?= ($cu['gender'] ?? '') === 'male'   ? 'selected' : '' ?>>Male</option>
+            <option value="female" <?= ($cu['gender'] ?? '') === 'female' ? 'selected' : '' ?>>Female</option>
+            <option value="other"  <?= ($cu['gender'] ?? '') === 'other'  ? 'selected' : '' ?>>Other</option>
+        </select>
     </div>
 </div>
-<div id="appConfig" 
-     data-delete-url="<?= base_url('users/delete') ?>"
-     data-update-url="<?= base_url('users/update') ?>"
-     data-datatable-url="<?= base_url('dashboard/datatable') ?>"
-     style="display:none;">
+
+<div class="d-flex justify-content-end gap-2">
+    <button type="button" class="btn btn-secondary btn-sm"
+            data-bs-dismiss="modal">Cancel</button>
+    <button type="submit" class="btn-save-edit">
+        <i class="fas fa-save me-1"></i>Save Changes
+    </button>
 </div>
-    <?= $this->endSection() ?>
+                    
+<div id="appConfig"
+    data-delete-url="<?= base_url('users/delete') ?>"
+    data-update-url="<?= base_url('users/update') ?>"
+    data-datatable-url="<?= base_url('dashboard/datatable') ?>"
+    style="display:none;">
+</div>
+<?= $this->endSection() ?>
 
 <?= $this->section('page_scripts') ?>
 <script>
     const csrfTokenName = '<?= csrf_token() ?>';
-    let csrfHash      = '<?= csrf_hash() ?>';
+    let csrfHash = '<?= csrf_hash() ?>';
 </script>
 <script src="<?= base_url('assets/js/dashboard.js') ?>"></script>
 <?= $this->endSection() ?>

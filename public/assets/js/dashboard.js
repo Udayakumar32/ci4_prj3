@@ -56,27 +56,6 @@ const dt = $('#userTable').DataTable({
         { data: 'actions',      orderable: false, searchable: false }
     ],
 
-
-    ajax: {
-    url:  datatableUrl,
-    type: 'POST',
-    data: function (d) {
-        d[csrfTokenName] = csrfHash;
-        d.dateFrom       = $('#dateFrom').val();
-        d.dateTo         = $('#dateTo').val();
-    },
-    dataSrc: function (json) {
-        if (json.csrfHash) csrfHash = json.csrfHash;
-        return json.data;
-    },
-    // ADD these to see exact error
-    error: function (xhr, error, thrown) {
-        console.log('Status:', xhr.status);
-        console.log('Response:', xhr.responseText);
-        console.log('Error:', error, thrown);
-    }
-},
-
     language: {
         search:            '<i class="fas fa-search"></i>',
         searchPlaceholder: 'Search users...',
@@ -234,11 +213,11 @@ $('#profileImageInput').on('change', function () {
     if (!file) return;
 
     // Validate size (2MB max)
-    if (file.size > 2 * 1024 * 1024) {
-        alert('Image is too large. Maximum size is 2MB.');
-        this.value = '';
-        return;
-    }
+    // if (file.size > 2 * 1024 * 1024) {
+    //     alert('Image is too large. Maximum size is 2MB.');
+    //     this.value = '';
+    //     return;
+    // }
 
     const reader = new FileReader();
     reader.onload = function (e) {
@@ -272,7 +251,68 @@ $(document).on('click', '.btn-delete-trigger', function () {
     /* ──────────────────────────────────────────────
        8.  AUTO-DISMISS flash alerts after 4s
     ────────────────────────────────────────────── */
-    setTimeout(() => $('.flash-alert').fadeOut(400), 4000);
+// ── Profile image — validate before submit, show toast not browser popup ──
+document.getElementById('profileImageInput').addEventListener('change', function () {
+    const file = this.files[0];
+    if (!file) return;
+
+    const maxSize = 2 * 1024 * 1024;
+    const allowed = ['image/jpeg', 'image/png', 'image/webp'];
+
+    if (!allowed.includes(file.type)) {
+        showToast('Only JPG, PNG or WEBP images are allowed.', 'error');
+        this.value = '';
+        return;
+    }
+
+    if (file.size > maxSize) {
+        showToast('Image is too large. Maximum size is 2MB.', 'error');
+        this.value = '';
+        return;
+    }
+
+    // Live preview in the modal
+    const reader = new FileReader();
+    reader.onload = e => {
+        const preview = document.getElementById('profilePreview');
+        if (preview.tagName === 'IMG') {
+            preview.src = e.target.result;
+        } else {
+            // Replace the icon div with an img tag
+            const img = document.createElement('img');
+            img.id = 'profilePreview';
+            img.src = e.target.result;
+            img.style = 'width:80px;height:80px;border-radius:50%;object-fit:cover;border:3px solid var(--accent);';
+            preview.replaceWith(img);
+        }
+    };
+    reader.readAsDataURL(file);
+});
+
+// ── Toast helper ──────────────────────────────────────────────────────────
+function showToast(message, type = 'success') {
+    const container = document.getElementById('toast-container');
+    const div = document.createElement('div');
+    div.className = `flash-alert alert-${type === 'error' ? 'danger' : 'success'}`;
+    div.innerHTML = `<i class="fas fa-${type === 'error' ? 'exclamation-circle' : 'check-circle'}"></i><span>${message}</span>`;
+    container.appendChild(div);
+    setTimeout(() => div.remove(), 4000);
+}
+
+
+    $(document).ready(function() {
+    // Select all flash alerts
+    const $alerts = $('.flash-alert');
+
+    if ($alerts.length > 0) {
+        // Wait 4 seconds, then fade out and remove from DOM
+        setTimeout(() => {
+            $alerts.fadeOut(400, function() {
+                $(this).remove(); 
+            });
+        }, 4000);
+    }
+});
 
 });
 

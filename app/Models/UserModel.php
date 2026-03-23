@@ -39,10 +39,9 @@ class UserModel extends Model
         'username' => 'required|min_length[2]|max_length[21]|alpha',
         'email' => 'required|max_length[50]|valid_email|is_unique[users.email]',
         'password' => 'required|min_length[8]|max_length[32]|regex_match[/^(?=.*[A-Z])(?=.*[a-z])(?=.*\d)(?=.*[@$!%*?&]).{8,}$/]',
-        'gender' => 'required',
+        'gender' => 'permit_empty',
         'phone_number' => 'required|numeric|min_length[10]|max_length[12]',
-        // 'profile_pic' => 'is_image[profile_pic]|max_size[profile_pic,2048]|ext_in[profile_pic,png,jpg,jpeg]|mime_in[profile_pic,image/png,image/jpg,image/jpeg,image]',
-
+        'profile_pic' => 'permit_empty'
     ];
     protected $validationMessages   = [    
   'username' => [
@@ -62,9 +61,6 @@ class UserModel extends Model
     'min_length'  => 'Your password must be at least 8 characters long.',
     'max_length'  => 'Your password cannot exceed 32 characters.',
     'regex_match' => 'Your password must include at least one uppercase letter, one lowercase letter, one number, and one special character (like @, $, !, %, *, ?, or &).'
-],
-'gender' => [
-    'required' => 'Please select your gender from the list.'
 ],
 'phone_number' => [
     'required'   => 'A phone number is required so we can contact you.',

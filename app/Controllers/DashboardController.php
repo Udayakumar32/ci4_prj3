@@ -53,6 +53,7 @@ class DashboardController extends BaseController
                 'phone_number' => $currentUser['phone_number'] ?? null,
                 'gender'       => $currentUser['gender']       ?? null,
                 'user_type'    => $currentUser['user_type']    ?? 'user',
+                'profile_pic'   => $currentUser['profile_pic']   ?? null,
                 'created_at'   => $currentUser['created_at']   ?? null,
             ]);
         }
@@ -148,12 +149,12 @@ class DashboardController extends BaseController
                              data-username="' . esc($u['username'])                  . '"
                              data-phone="'    . esc($u['phone_number'] ?? '')        . '"
                              data-gender="'   . esc(strtolower($u['gender'] ?? ''))  . '">
-                        <i class="fas fa-edit"></i> Edit
+                        Edit
                      </button>
                      <button class="btn-act btn-delete-u btn-delete-trigger"
                              data-id="'       . $u['id']            . '"
                              data-username="' . esc($u['username']) . '">
-                        <i class="fas fa-trash"></i> Delete
+                        Delete
                      </button>';
             } else {
                 $actions = '<span class="badge bg-secondary" style="font-size:11px;">View Only</span>';
@@ -260,18 +261,40 @@ class DashboardController extends BaseController
         return redirect()->to(base_url('dashboard'))
             ->with('error', 'Could not update user. Please try again.');
     }
-public function updateProfile()
+public function get_profile_pic($filename)
+{
+    // Path to your private writable folder
+    $path = WRITEPATH . 'uploads/profiles/' . $filename;
+
+    if (!file_exists($path)) {
+        // Fallback to a default image if the file is missing
+        $path = FCPATH . 'assets/img/default-user.png'; 
+        if (!file_exists($path)) {
+            throw \CodeIgniter\Exceptions\PageNotFoundException::forPageNotFound();
+        }
+    }
+
+    $file = new \CodeIgniter\Files\File($path);
+    $type = $file->getMimeType();
+
+    // Serve the file with the correct image header
+    return $this->response
+                ->setHeader('Content-Type', $type)
+                ->setBody(file_get_contents($path));
+}
+   public function updateProfile()
 {
     $this->authGuard();
 
-    $userId = (int) session()->get('user_id');
-    $model  = new UserModel();
+    $userId      = (int) session()->get('user_id');
+    $model       = new UserModel();
+    $currentUser = $model->find($userId);
 
     $username = trim($this->request->getPost('username'));
     $phone    = trim($this->request->getPost('phone_number'));
     $gender   = $this->request->getPost('gender');
 
-    // Validate username
+    // ── Validate username ────────────────────────────────────────────────
     if (empty($username)) {
         return redirect()->to(base_url('dashboard'))
                          ->with('error', 'A username is required.');
@@ -289,15 +312,19 @@ public function updateProfile()
                          ->with('error', 'Your username can only contain letters.');
     }
 
-    // Validate phone if provided
+    // ── Validate phone (optional) ────────────────────────────────────────
     if (!empty($phone)) {
-        if (!preg_match('/^[0-9\s\+\-\(\)]+$/', $phone)) {
+        if (!ctype_digit($phone)) {
             return redirect()->to(base_url('dashboard'))
-                             ->with('error', 'Phone number contains invalid characters.');
+                             ->with('error', 'Please enter only numbers for phone.');
         }
-        if (strlen(preg_replace('/\D/', '', $phone)) < 10) {
+        if (strlen($phone) < 10) {
             return redirect()->to(base_url('dashboard'))
                              ->with('error', 'Phone number must be at least 10 digits.');
+        }
+        if (strlen($phone) > 12) {
+            return redirect()->to(base_url('dashboard'))
+                             ->with('error', 'Phone number cannot exceed 12 digits.');
         }
     }
 
@@ -307,57 +334,65 @@ public function updateProfile()
         'gender'       => $gender ?: null,
     ];
 
-    // Handle profile image upload
-    $image = $this->request->getFile('profile_image');
-    if ($image && $image->isValid() && !$image->hasMoved()) {
+    // ── Image upload — all errors go to toast ────────────────────────────
+    $image = $this->request->getFile('profile_pic');
 
-        // Validate image type and size
-        $allowedTypes = ['image/jpeg', 'image/png', 'image/webp'];
-        if (!in_array($image->getMimeType(), $allowedTypes)) {
+    if ($image && $image->isValid() && !$image->hasMoved() && $image->getSize() > 0) {
+
+        // Validate MIME type
+        $allowedMimes = ['image/jpeg', 'image/png', 'image/webp'];
+        if (!in_array($image->getMimeType(), $allowedMimes)) {
             return redirect()->to(base_url('dashboard'))
                              ->with('error', 'Only JPG, PNG or WEBP images are allowed.');
         }
+
+        // Validate size — this is the toast message, NOT browser native
         if ($image->getSize() > 2 * 1024 * 1024) {
             return redirect()->to(base_url('dashboard'))
-                             ->with('error', 'Image must be under 2MB.');
+                             ->with('error', 'Image is too large. Maximum size is 2MB.');
         }
 
-        // Create upload folder if it doesn't exist
-        $uploadPath = FCPATH . 'uploads/profiles/';
+        // Safe extension from MIME
+        $mimeToExt = [
+            'image/jpeg' => 'jpg',
+            'image/png'  => 'png',
+            'image/webp' => 'webp',
+        ];
+        $ext = $mimeToExt[$image->getMimeType()];
+
+        $uploadPath = WRITEPATH . 'uploads/profiles/';
         if (!is_dir($uploadPath)) {
             mkdir($uploadPath, 0755, true);
         }
 
-        // Delete old image if exists
-        $currentUser = $model->find($userId);
-        if (!empty($currentUser['profile_image'])) {
-            $oldFile = $uploadPath . $currentUser['profile_image'];
-            if (file_exists($oldFile)) unlink($oldFile);
+        // Delete old image
+        if (!empty($currentUser['profile_pic'])) {
+            $oldFile = $uploadPath . $currentUser['profile_pic'];
+            if (file_exists($oldFile)) {
+                unlink($oldFile);
+            }
         }
 
-        // Save new image with unique name
-        $newName = 'profile_' . $userId . '_' . time() . '.' . $image->getExtension();
+        $newName = 'profile_' . $userId . '_' . time() . '.' . $ext;
         $image->move($uploadPath, $newName);
-        $updateData['profile_image'] = $newName;
+        $updateData['profile_pic'] = $newName;
     }
 
-    $model->skipValidation(true);
+    // ── Save — skip model validation entirely for profile update ─────────
+    $model->skipValidation(true)->update($userId, $updateData);
 
-    if ($model->update($userId, $updateData)) {
-        // Refresh session with new values
-        session()->set([
-            'username'     => $username,
-            'phone_number' => $phone  ?: null,
-            'gender'       => $gender ?: null,
-        ]);
-
-        return redirect()->to(base_url('dashboard'))
-                         ->with('success', 'Profile updated successfully.');
-    }
+    // ── Refresh session ──────────────────────────────────────────────────
+    session()->set([
+        'username'     => $username,
+        'phone_number' => $phone  ?: null,
+        'gender'       => $gender ?: null,
+        'profile_pic'  => $updateData['profile_pic'] ?? $currentUser['profile_pic'],
+    ]);
 
     return redirect()->to(base_url('dashboard'))
-                     ->with('error', 'Could not update profile. Please try again.');
+                     ->with('success', 'Profile updated successfully.');
 }
+
     public function delete($id = null)
     {
         $this->authGuard();
